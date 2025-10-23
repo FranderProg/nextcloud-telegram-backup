@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  nextcloud-backup-bot:
+    build: .
+    container_name: nextcloud-telegram-backup
+    restart: unless-stopped
+    environment:
+      - TELEGRAM_BOT_TOKEN=8397420823:AAHktLrj-Urqi4TpepZRtYcFqSN5p2QMp7o
+      - TELEGRAM_CHAT_ID=5642423602
+      - NEXTCLOUD_PATH=/nextcloud/data
+      - LOG_LEVEL=INFO
+    volumes:
+      - /path/to/nextcloud/data:/nextcloud/data:ro
+      - ./logs:/app/logs
+      - ./config:/app/config
+    ports:
+      - "8080:8080"
+    depends_on:
+      - redis
+    networks:
+      - backup-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: nextcloud-backup-redis
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    networks:
+      - backup-network
+
+  web-interface:
+    build: .
+    container_name: nextcloud-backup-web
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    environment:
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - redis
+    networks:
+      - backup-network
+
+volumes:
+  redis_data:
+
+networks:
+  backup-network:
+    driver: bridge

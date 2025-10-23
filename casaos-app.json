@@ -1,0 +1,149 @@
+{
+  "name": "Nextcloud Telegram Backup",
+  "description": "Bot automático de respaldo de Nextcloud a Telegram con monitoreo web",
+  "version": "1.0.0",
+  "author": "Tu Nombre",
+  "category": "Backup",
+  "icon": "https://raw.githubusercontent.com/CasaOS-Community/casaos-apps/main/apps/nextcloud-telegram-backup/icon.png",
+  "maintainer": "Tu Nombre <tu@email.com>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tu-usuario/nextcloud-telegram-backup"
+  },
+  "requirements": {
+    "architecture": {
+      "amd64": true,
+      "arm64": true
+    },
+    "memory": "512MB",
+    "storage": "1GB"
+  },
+  "services": [
+    {
+      "name": "nextcloud-backup-bot",
+      "image": "nextcloud-telegram-backup:latest",
+      "restart": "unless-stopped",
+      "environment": [
+        {
+          "name": "TELEGRAM_BOT_TOKEN",
+          "description": "Token del bot de Telegram",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "TELEGRAM_CHAT_ID",
+          "description": "ID del chat/grupo de Telegram",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "NEXTCLOUD_PATH",
+          "description": "Ruta del directorio de Nextcloud dentro del contenedor",
+          "required": false,
+          "type": "string",
+          "default": "/nextcloud/data"
+        },
+        {
+          "name": "LOG_LEVEL",
+          "description": "Nivel de logging",
+          "required": false,
+          "type": "string",
+          "default": "INFO"
+        }
+      ],
+      "volumes": [
+        {
+          "name": "nextcloud-data",
+          "description": "Directorio de datos de Nextcloud",
+          "required": true,
+          "type": "bind",
+          "readonly": true
+        },
+        {
+          "name": "logs",
+          "description": "Directorio de logs",
+          "required": false,
+          "type": "bind"
+        }
+      ],
+      "ports": [
+        {
+          "name": "bot-port",
+          "description": "Puerto del bot (interno)",
+          "required": false,
+          "type": "tcp",
+          "default": 8080
+        }
+      ],
+      "networks": [
+        "backup-network"
+      ]
+    },
+    {
+      "name": "redis",
+      "image": "redis:7-alpine",
+      "restart": "unless-stopped",
+      "volumes": [
+        {
+          "name": "redis-data",
+          "description": "Datos de Redis",
+          "required": false,
+          "type": "volume"
+        }
+      ],
+      "networks": [
+        "backup-network"
+      ]
+    },
+    {
+      "name": "web-interface",
+      "image": "nextcloud-telegram-backup:latest",
+      "restart": "unless-stopped",
+      "environment": [
+        {
+          "name": "REDIS_URL",
+          "description": "URL de conexión a Redis",
+          "required": false,
+          "type": "string",
+          "default": "redis://redis:6379"
+        }
+      ],
+      "ports": [
+        {
+          "name": "web-port",
+          "description": "Puerto de la interfaz web",
+          "required": true,
+          "type": "tcp",
+          "default": 8081
+        }
+      ],
+      "networks": [
+        "backup-network"
+      ]
+    }
+  ],
+  "networks": [
+    {
+      "name": "backup-network",
+      "driver": "bridge"
+    }
+  ],
+  "volumes": [
+    {
+      "name": "redis-data",
+      "description": "Datos persistentes de Redis"
+    }
+  ],
+  "install": {
+    "type": "docker-compose",
+    "file": "docker-compose.yml"
+  },
+  "uninstall": {
+    "type": "docker-compose",
+    "file": "docker-compose.yml"
+  },
+  "update": {
+    "type": "docker-compose",
+    "file": "docker-compose.yml"
+  }
+}
